@@ -105,6 +105,30 @@ Nodal.UI = {
     return btn;
   },
 
+  _addToggle: function(label, labels, activeIndex, onChange, container) {
+    var toggleDiv = document.createElement('div');
+    toggleDiv.className = 'toggle-group';
+    var buttons = [];
+
+    for (var i = 0; i < labels.length; i++) {
+      (function(idx) {
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-small' + (idx === activeIndex ? ' active' : '');
+        btn.textContent = labels[idx];
+        btn.addEventListener('click', function() {
+          for (var b = 0; b < buttons.length; b++) buttons[b].classList.remove('active');
+          btn.classList.add('active');
+          onChange(idx);
+        });
+        buttons.push(btn);
+        toggleDiv.appendChild(btn);
+      })(i);
+    }
+
+    this._addControl(label, toggleDiv, container);
+    return toggleDiv;
+  },
+
   _regenerateAll: function() {
     Nodal.Grid.generate(width, height, Nodal.Grid.type, Nodal.Grid.cellSize);
     Nodal.Nodes.generate(width, height);
@@ -394,13 +418,20 @@ Nodal.UI = {
     this._addSection('Animation');
 
     this._addSelect('Mode', [
-      { value: 'particle', label: 'Particle Travel' },
+      { value: 'particle', label: 'Stream' },
       { value: 'linedraw', label: 'Line Draw' },
       { value: 'glow', label: 'Glow / Pulse' },
       { value: 'none', label: 'None' }
     ], Nodal.Animation.mode, function(val) {
       Nodal.Animation.mode = val;
     });
+
+    this._addToggle('Behavior', ['Mirror', 'Loop'],
+      Nodal.Animation.behavior === 'mirror' ? 0 : 1,
+      function(idx) {
+        Nodal.Animation.behavior = idx === 0 ? 'mirror' : 'loop';
+      }
+    );
 
     this._addSlider('Speed', 0, 100, Nodal.Animation.speed, 1, function(val) {
       Nodal.Animation.speed = val;
@@ -499,12 +530,16 @@ Nodal.UI = {
       Nodal.Connections.dashGap = val;
     }, content);
 
-    // Particle settings
-    this._addSlider('Particle Size', 2, 15, Nodal.Animation.particleSize, 1, function(val) {
+    // Stream settings
+    this._addSlider('Head Size', 2, 15, Nodal.Animation.particleSize, 1, function(val) {
       Nodal.Animation.particleSize = val;
     }, content);
 
-    this._addSlider('Trail Length', 0, 20, Nodal.Animation.trailLength, 1, function(val) {
+    this._addSlider('Stream Len', 5, 50, Nodal.Animation.streamLength * 100, 1, function(val) {
+      Nodal.Animation.streamLength = val / 100;
+    }, content);
+
+    this._addSlider('Smoothness', 5, 30, Nodal.Animation.trailLength, 1, function(val) {
       Nodal.Animation.trailLength = val;
     }, content);
 

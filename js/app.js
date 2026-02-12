@@ -47,8 +47,14 @@ Nodal._drawScene = function() {
   // Grid
   Nodal.Grid.draw(window);
 
-  // Connections (static paths) — hide when line-draw animation replaces them
-  if (Nodal.Animation.mode !== 'linedraw') {
+  // Connections (static paths)
+  // Stream mode: dim base paths so bright streams stand out (Tron aesthetic)
+  // Line-draw mode: hide entirely (animation replaces them)
+  if (Nodal.Animation.mode === 'particle') {
+    window.drawingContext.globalAlpha = 0.25;
+    Nodal.Connections.draw(window);
+    window.drawingContext.globalAlpha = 1.0;
+  } else if (Nodal.Animation.mode !== 'linedraw') {
     Nodal.Connections.draw(window);
   }
 
