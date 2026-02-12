@@ -62,8 +62,10 @@ Nodal._drawScene = function() {
   Nodal.Animation.update(deltaTime);
   Nodal.Animation.draw(window);
 
-  // Nodes (on top)
-  Nodal.Nodes.draw(window);
+  // Nodes (on top) — can be hidden to see only animations
+  if (Nodal.Nodes.visible) {
+    Nodal.Nodes.draw(window);
+  }
 };
 
 function windowResized() {

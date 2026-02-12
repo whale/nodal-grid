@@ -189,6 +189,11 @@ Nodal.UI = {
       Nodal.Grid.shapeElongation = val;
       self._regenerateAll();
     });
+
+    this._addSlider('Spread', 0, 100, Nodal.Grid.shapeSpread, 5, function(val) {
+      Nodal.Grid.shapeSpread = val;
+      self._regenerateAll();
+    });
   },
 
   // ==== NODES SECTION ====
@@ -196,6 +201,11 @@ Nodal.UI = {
     this._addSection('Nodes');
 
     var self = this;
+
+    this._addToggle('Show', ['On', 'Off'],
+      Nodal.Nodes.visible ? 0 : 1,
+      function(idx) { Nodal.Nodes.visible = idx === 0; }
+    );
 
     this._addSlider('Count', 2, 30, Nodal.Nodes.count, 1, function(val) {
       Nodal.Nodes.count = val;
@@ -371,7 +381,7 @@ Nodal.UI = {
 
     var self = this;
 
-    this._addSlider('Count', 0, 20, Nodal.Connections.count, 1, function(val) {
+    this._addSlider('Count', 0, 30, Nodal.Connections.count, 1, function(val) {
       Nodal.Connections.count = val;
       self._regenerateConnections();
     });
@@ -455,6 +465,11 @@ Nodal.UI = {
     this._addColor('Color', Nodal.Animation.color, function(val) {
       Nodal.Animation.color = val;
     });
+
+    this._addToggle('Node Pulse', ['On', 'Off'],
+      Nodal.Animation.nodePulse ? 0 : 1,
+      function(idx) { Nodal.Animation.nodePulse = idx === 0; }
+    );
   },
 
   // ==== EXPORT SECTION ====

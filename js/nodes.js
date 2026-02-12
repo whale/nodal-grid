@@ -7,6 +7,7 @@ window.Nodal = window.Nodal || {};
 Nodal.Nodes = {
   list: [],
   count: 8,
+  visible: true,        // toggle node rendering on/off
   axisAngle: 45,       // degrees, 0 = right, 90 = down
   chaos: 30,            // 0-100
   style: 'circle',      // 'circle' | 'square'

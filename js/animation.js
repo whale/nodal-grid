@@ -12,8 +12,9 @@ Nodal.Animation = {
   particleSize: 5,
   trailLength: 15,      // stream smoothness (segment count)
   glowIntensity: 60,    // 0-100 for glow/pulse mode
-  streamLength: 0.20,   // fraction of path covered by the stream tail
+  streamLength: 0.22,   // fraction of path covered by the stream
   behavior: 'mirror',   // 'mirror' | 'loop'
+  nodePulse: true,      // whether nodes glow when lines touch them
 
   // Internal state
   states: [],
@@ -29,7 +30,7 @@ Nodal.Animation = {
     for (var i = 0; i < connections.length; i++) {
       this.states.push({
         t: 0,
-        phase: i * 0.4       // stagger offset
+        phase: i * 0.4
       });
     }
 
@@ -59,8 +60,6 @@ Nodal.Animation = {
       switch (this.mode) {
         case 'particle':
           state.t += dt * 0.3;
-          // Mirror uses 0-2 range (0→1 forward, 1→2 backward)
-          // Loop uses 0-1 range
           if (this.behavior === 'mirror') {
             if (state.t > 2) state.t -= 2;
           } else {
@@ -79,8 +78,16 @@ Nodal.Animation = {
     }
 
     // Update node glow states (stream mode only)
-    if (this.mode === 'particle') {
+    if (this.mode === 'particle' && this.nodePulse) {
       this._updateNodeGlows(dt, connections);
+    } else if (!this.nodePulse) {
+      // Fade out any existing glows when pulse disabled
+      for (var nid in this._nodeGlows) {
+        var g = this._nodeGlows[nid];
+        g.target = 0;
+        g.intensity *= 0.9;
+        if (g.intensity < 0.005) g.intensity = 0;
+      }
     }
   },
 
@@ -92,12 +99,13 @@ Nodal.Animation = {
       rawT = rawT % 2;
       if (rawT < 0) rawT += 2;
       var linear = rawT > 1 ? 2 - rawT : rawT;
-      // Sine easing: smooth deceleration at endpoints (Tron pause at nodes)
+      // Sine easing: smooth deceleration at endpoints
       return 0.5 - 0.5 * Math.cos(linear * Math.PI);
     } else {
+      // Loop: also ease for natural acceleration/deceleration at nodes
       rawT = rawT % 1;
       if (rawT < 0) rawT += 1;
-      return rawT;
+      return 0.5 - 0.5 * Math.cos(rawT * Math.PI);
     }
   },
 
@@ -106,10 +114,10 @@ Nodal.Animation = {
   // =========================================================================
   _updateNodeGlows: function(dt, connections) {
     var nodes = Nodal.Nodes.list;
-    var glowRadius = 35;
+    var glowRadius = 40;
     var glowRadiusSq = glowRadius * glowRadius;
 
-    // Reset all targets to 0
+    // Reset all targets
     for (var nid in this._nodeGlows) {
       this._nodeGlows[nid].target = 0;
     }
@@ -131,7 +139,7 @@ Nodal.Animation = {
 
         if (distSq < glowRadiusSq) {
           var proximity = 1 - Math.sqrt(distSq) / glowRadius;
-          proximity = proximity * proximity; // quadratic: snappy near node
+          proximity = proximity * proximity;
           if (!this._nodeGlows[node.vertexId]) {
             this._nodeGlows[node.vertexId] = { intensity: 0, target: 0 };
           }
@@ -162,7 +170,7 @@ Nodal.Animation = {
     switch (this.mode) {
       case 'particle':
         this._drawStream(p, connections);
-        this._drawNodeGlows(p);
+        if (this.nodePulse) this._drawNodeGlows(p);
         break;
       case 'linedraw':
         this._drawLineDraw(p, connections);
@@ -174,7 +182,7 @@ Nodal.Animation = {
   },
 
   // =========================================================================
-  // TRON STREAM — glowing head, fading gradient tail
+  // TRON STREAM — flowing gradient line, no head dot
   // =========================================================================
   _drawStream: function(p, connections) {
     var col = p.color(this.color);
@@ -209,17 +217,17 @@ Nodal.Animation = {
         // progress: 0 at tail, 1 at head
         var progress = segEnd;
 
-        // Cubic ramp: gentle fade at tail, steep bright at head
+        // Cubic ramp: gentle at tail, bright at head
         var alpha = progress * progress * progress;
 
         // Width: thin tail, thicker head
-        var weight = baseWeight * (0.3 + progress * 1.8);
+        var weight = baseWeight * (0.3 + progress * 2.0);
 
-        // Glow only on the head portion (last 40%)
-        if (progress > 0.6) {
-          var glowAmt = (progress - 0.6) / 0.4;
-          p.drawingContext.shadowBlur = glowAmt * glowAmt * 18;
-          p.drawingContext.shadowColor = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (glowAmt * 0.7).toFixed(2) + ')';
+        // Glow on the leading edge (last 35%)
+        if (progress > 0.65) {
+          var glowAmt = (progress - 0.65) / 0.35;
+          p.drawingContext.shadowBlur = glowAmt * glowAmt * 20;
+          p.drawingContext.shadowColor = 'rgba(' + cr + ',' + cg + ',' + cb + ',' + (glowAmt * 0.8).toFixed(2) + ')';
         } else {
           p.drawingContext.shadowBlur = 0;
           p.drawingContext.shadowColor = 'transparent';
@@ -230,30 +238,14 @@ Nodal.Animation = {
         p.line(pos0.x, pos0.y, pos1.x, pos1.y);
       }
 
-      // --- GLOWING HEAD DOT ---
-      var headPos = Nodal.Connections.getPointOnPath(pts, headT);
-
-      // Outer glow halo
-      p.drawingContext.shadowBlur = 25;
-      p.drawingContext.shadowColor = this.color;
-      p.noStroke();
-      p.fill(cr, cg, cb, 160);
-      p.ellipse(headPos.x, headPos.y, this.particleSize * 3, this.particleSize * 3);
-
-      // Bright white core
-      p.drawingContext.shadowBlur = 12;
-      p.drawingContext.shadowColor = 'rgba(255,255,255,0.5)';
-      p.fill(255, 255, 255, 220);
-      p.ellipse(headPos.x, headPos.y, this.particleSize * 1.2, this.particleSize * 1.2);
-
-      // Reset shadow
+      // Reset shadow after each connection
       p.drawingContext.shadowBlur = 0;
       p.drawingContext.shadowColor = 'transparent';
     }
   },
 
   // =========================================================================
-  // NODE GLOW RENDERING
+  // NODE GLOW RENDERING — pulse effect when stream touches a node
   // =========================================================================
   _drawNodeGlows: function(p) {
     var nodes = Nodal.Nodes.list;

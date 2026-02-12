@@ -14,6 +14,7 @@ Nodal.Grid = {
   shapeChaos: 0,          // 0-100: 0=full grid, 100=very staggered with holes
   shapeDirection: 90,     // degrees: axis bias for where grid is denser
   shapeElongation: 50,    // 0-100: stretch along direction axis
+  shapeSpread: 50,        // 0-100: how far grid extends from center
 
   // Generated data
   vertices: new Map(),
@@ -203,9 +204,12 @@ Nodal.Grid = {
     // Noise scale — bigger chaos = bigger hole features
     var noiseScale = 0.006 + chaos * 0.018;
 
-    // Threshold: at low chaos barely anything removed, at high chaos ~60% removed
-    // The score ranges 0-1, threshold controls what fraction is kept
-    var threshold = 0.5 + chaos * 0.22; // chaos 0→0.5, chaos 100→0.72
+    // Spread: controls effective radius of the grid
+    // 0 = very compact, 50 = default, 100 = fills canvas
+    var spreadFactor = 0.3 + (this.shapeSpread / 100) * 1.7;
+
+    // Threshold: at low chaos barely anything removed, at high chaos lots removed
+    var threshold = 0.5 + chaos * 0.32; // chaos 0→0.5, chaos 100→0.82
 
     for (var i = 0; i < cells.length; i++) {
       var cell = cells[i];
@@ -217,14 +221,14 @@ Nodal.Grid = {
         continue;
       }
 
-      // Distance from center (normalized 0-1)
+      // Distance from center (normalized 0-1), scaled by spread
       var dx = cell.cx - cx;
       var dy = cell.cy - cy;
       var cosD = Math.cos(-dirRad);
       var sinD = Math.sin(-dirRad);
       var rx = dx * cosD - dy * sinD;
       var ry = dx * sinD + dy * cosD;
-      var normDist = Math.sqrt((rx / elongation) * (rx / elongation) + ry * ry) / maxRadius;
+      var normDist = Math.sqrt((rx / elongation) * (rx / elongation) + ry * ry) / (maxRadius * spreadFactor);
 
       // Perlin noise (0-1 range)
       var n = noise(cell.cx * noiseScale + 100, cell.cy * noiseScale + 100);

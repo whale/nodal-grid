@@ -1,12 +1,12 @@
 // =============================================================================
-// connections.js — BFS pathfinding along grid edges + rendering
+// connections.js — BFS pathfinding along grid edges + curved path rendering
 // =============================================================================
 
 window.Nodal = window.Nodal || {};
 
 Nodal.Connections = {
   list: [],
-  count: 5,
+  count: 8,
   color: '#c8ff00',
   thickness: 2,
   style: 'solid',       // 'solid' | 'dashed'
@@ -18,47 +18,79 @@ Nodal.Connections = {
     var nodes = Nodal.Nodes.list;
     if (nodes.length < 2) return;
 
-    // Build a list of all possible node pairs sorted by euclidean distance
+    // Build all possible node pairs
     var pairs = [];
     for (var i = 0; i < nodes.length; i++) {
       for (var j = i + 1; j < nodes.length; j++) {
         var dx = nodes[i].x - nodes[j].x;
         var dy = nodes[i].y - nodes[j].y;
-        pairs.push({
-          from: i,
-          to: j,
-          dist: Math.sqrt(dx * dx + dy * dy)
-        });
+        pairs.push({ from: i, to: j, dist: Math.sqrt(dx * dx + dy * dy) });
       }
     }
-    pairs.sort(function(a, b) { return a.dist - b.dist; });
 
-    // Pick up to this.count connections, preferring shorter distances
-    var used = 0;
-    for (var p = 0; p < pairs.length && used < this.count; p++) {
+    // Shuffle for variety (seeded via p5 random)
+    for (var i = pairs.length - 1; i > 0; i--) {
+      var j = Math.floor(random() * (i + 1));
+      var tmp = pairs[i]; pairs[i] = pairs[j]; pairs[j] = tmp;
+    }
+
+    // Ensure coverage: prioritize connecting under-represented nodes
+    var nodeConns = {};
+    for (var i = 0; i < nodes.length; i++) nodeConns[i] = 0;
+    var selected = [];
+    var used = {};
+
+    // First pass: ensure every node gets at least one connection
+    for (var p = 0; p < pairs.length && selected.length < this.count; p++) {
       var pair = pairs[p];
+      if (nodeConns[pair.from] === 0 || nodeConns[pair.to] === 0) {
+        var key = pair.from + '_' + pair.to;
+        if (!used[key]) {
+          selected.push(pair);
+          used[key] = true;
+          nodeConns[pair.from]++;
+          nodeConns[pair.to]++;
+        }
+      }
+    }
+
+    // Second pass: fill remaining slots with random pairs
+    for (var p = 0; p < pairs.length && selected.length < this.count; p++) {
+      var pair = pairs[p];
+      var key = pair.from + '_' + pair.to;
+      if (!used[key]) {
+        selected.push(pair);
+        used[key] = true;
+        nodeConns[pair.from]++;
+        nodeConns[pair.to]++;
+      }
+    }
+
+    // Build paths for selected connections
+    for (var s = 0; s < selected.length; s++) {
+      var pair = selected[s];
       var fromNode = nodes[pair.from];
       var toNode = nodes[pair.to];
 
-      // BFS pathfind along grid edges
       var path = this._findPath(fromNode.vertexId, toNode.vertexId);
       if (path) {
-        // Convert vertex IDs to pixel coordinates
         var pathPoints = [];
         for (var k = 0; k < path.length; k++) {
           var v = Nodal.Grid.vertices.get(path[k]);
           if (v) pathPoints.push({ x: v.x, y: v.y });
         }
 
+        // Smooth angular grid path into natural curves
+        var smoothed = this._smoothPath(pathPoints);
+
         this.list.push({
-          id: 'conn_' + used,
+          id: 'conn_' + this.list.length,
           fromNodeId: fromNode.id,
           toNodeId: toNode.id,
           path: path,
-          pathPoints: pathPoints,
-          totalLength: this._computePathLength(pathPoints)
+          pathPoints: smoothed,
+          totalLength: this._computePathLength(smoothed)
         });
-        used++;
       }
     }
   },
@@ -79,7 +111,6 @@ Nodal.Connections = {
       var current = queue.shift();
 
       if (current === endId) {
-        // Reconstruct path
         var path = [];
         var node = endId;
         while (node !== undefined) {
@@ -102,7 +133,43 @@ Nodal.Connections = {
       }
     }
 
-    return null; // No path found
+    return null;
+  },
+
+  // Catmull-Rom spline smoothing — turns angular grid paths into natural curves
+  _smoothPath: function(points) {
+    if (points.length < 3) return points.slice();
+
+    var resolution = 4; // subdivisions per segment
+    var result = [];
+    var n = points.length;
+
+    for (var i = 0; i < n - 1; i++) {
+      var p0 = points[Math.max(0, i - 1)];
+      var p1 = points[i];
+      var p2 = points[i + 1];
+      var p3 = points[Math.min(n - 1, i + 2)];
+
+      for (var t = 0; t < resolution; t++) {
+        var s = t / resolution;
+        var s2 = s * s;
+        var s3 = s2 * s;
+
+        // Standard Catmull-Rom interpolation
+        var x = 0.5 * ((2*p1.x) + (-p0.x + p2.x)*s +
+          (2*p0.x - 5*p1.x + 4*p2.x - p3.x)*s2 +
+          (-p0.x + 3*p1.x - 3*p2.x + p3.x)*s3);
+        var y = 0.5 * ((2*p1.y) + (-p0.y + p2.y)*s +
+          (2*p0.y - 5*p1.y + 4*p2.y - p3.y)*s2 +
+          (-p0.y + 3*p1.y - 3*p2.y + p3.y)*s3);
+
+        result.push({ x: x, y: y });
+      }
+    }
+
+    // Add final endpoint
+    result.push(points[n - 1]);
+    return result;
   },
 
   _computePathLength: function(points) {
