@@ -151,11 +151,6 @@ Nodal.UI = {
       Nodal.Grid.opacity = val / 100;
     });
 
-    this._addSlider('Extent', 10, 100, Nodal.Grid.extent, 5, function(val) {
-      Nodal.Grid.extent = val;
-      self._regenerateAll();
-    });
-
     this._addSlider('Shape Chaos', 0, 100, Nodal.Grid.shapeChaos, 5, function(val) {
       Nodal.Grid.shapeChaos = val;
       self._regenerateAll();
