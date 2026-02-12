@@ -12,7 +12,7 @@ Nodal.Animation = {
   particleSize: 5,
   trailLength: 15,      // stream smoothness (segment count)
   glowIntensity: 60,    // 0-100 for glow/pulse mode
-  streamLength: 0.22,   // fraction of path covered by the stream
+  streamLength: 0.12,   // fraction of path covered by the stream
   behavior: 'mirror',   // 'mirror' | 'loop'
   nodePulse: true,      // whether nodes glow when lines touch them
 

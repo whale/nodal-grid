@@ -1,5 +1,5 @@
 // =============================================================================
-// connections.js — BFS pathfinding along grid edges + curved path rendering
+// connections.js — Multi-node circuit routing along grid edges + rendering
 // =============================================================================
 
 window.Nodal = window.Nodal || {};
@@ -18,78 +18,43 @@ Nodal.Connections = {
     var nodes = Nodal.Nodes.list;
     if (nodes.length < 2) return;
 
-    // Build all possible node pairs
-    var pairs = [];
-    for (var i = 0; i < nodes.length; i++) {
-      for (var j = i + 1; j < nodes.length; j++) {
-        var dx = nodes[i].x - nodes[j].x;
-        var dy = nodes[i].y - nodes[j].y;
-        pairs.push({ from: i, to: j, dist: Math.sqrt(dx * dx + dy * dy) });
+    for (var c = 0; c < this.count; c++) {
+      // Each circuit visits 3-6 random nodes (capped by available)
+      var numStops = 3 + Math.floor(random() * 4);
+      numStops = Math.min(numStops, nodes.length);
+
+      // Pick random unique node indices for this circuit
+      var pool = [];
+      for (var i = 0; i < nodes.length; i++) pool.push(i);
+      for (var i = pool.length - 1; i > 0; i--) {
+        var j = Math.floor(random() * (i + 1));
+        var tmp = pool[i]; pool[i] = pool[j]; pool[j] = tmp;
       }
-    }
+      var stops = pool.slice(0, numStops);
 
-    // Shuffle for variety (seeded via p5 random)
-    for (var i = pairs.length - 1; i > 0; i--) {
-      var j = Math.floor(random() * (i + 1));
-      var tmp = pairs[i]; pairs[i] = pairs[j]; pairs[j] = tmp;
-    }
+      // Build concatenated BFS path through all stops
+      var pathPoints = [];
+      var valid = true;
 
-    // Ensure coverage: prioritize connecting under-represented nodes
-    var nodeConns = {};
-    for (var i = 0; i < nodes.length; i++) nodeConns[i] = 0;
-    var selected = [];
-    var used = {};
+      for (var s = 0; s < stops.length - 1; s++) {
+        var fromNode = nodes[stops[s]];
+        var toNode = nodes[stops[s + 1]];
+        var subPath = this._findPath(fromNode.vertexId, toNode.vertexId);
 
-    // First pass: ensure every node gets at least one connection
-    for (var p = 0; p < pairs.length && selected.length < this.count; p++) {
-      var pair = pairs[p];
-      if (nodeConns[pair.from] === 0 || nodeConns[pair.to] === 0) {
-        var key = pair.from + '_' + pair.to;
-        if (!used[key]) {
-          selected.push(pair);
-          used[key] = true;
-          nodeConns[pair.from]++;
-          nodeConns[pair.to]++;
-        }
-      }
-    }
+        if (!subPath) { valid = false; break; }
 
-    // Second pass: fill remaining slots with random pairs
-    for (var p = 0; p < pairs.length && selected.length < this.count; p++) {
-      var pair = pairs[p];
-      var key = pair.from + '_' + pair.to;
-      if (!used[key]) {
-        selected.push(pair);
-        used[key] = true;
-        nodeConns[pair.from]++;
-        nodeConns[pair.to]++;
-      }
-    }
-
-    // Build paths for selected connections
-    for (var s = 0; s < selected.length; s++) {
-      var pair = selected[s];
-      var fromNode = nodes[pair.from];
-      var toNode = nodes[pair.to];
-
-      var path = this._findPath(fromNode.vertexId, toNode.vertexId);
-      if (path) {
-        var pathPoints = [];
-        for (var k = 0; k < path.length; k++) {
-          var v = Nodal.Grid.vertices.get(path[k]);
+        // Append points (skip first of subsequent segments to avoid dupes)
+        for (var k = (s === 0 ? 0 : 1); k < subPath.length; k++) {
+          var v = Nodal.Grid.vertices.get(subPath[k]);
           if (v) pathPoints.push({ x: v.x, y: v.y });
         }
+      }
 
-        // Smooth angular grid path into natural curves
-        var smoothed = this._smoothPath(pathPoints);
-
+      if (valid && pathPoints.length >= 2) {
         this.list.push({
           id: 'conn_' + this.list.length,
-          fromNodeId: fromNode.id,
-          toNodeId: toNode.id,
-          path: path,
-          pathPoints: smoothed,
-          totalLength: this._computePathLength(smoothed)
+          pathPoints: pathPoints,
+          totalLength: this._computePathLength(pathPoints)
         });
       }
     }
@@ -134,42 +99,6 @@ Nodal.Connections = {
     }
 
     return null;
-  },
-
-  // Catmull-Rom spline smoothing — turns angular grid paths into natural curves
-  _smoothPath: function(points) {
-    if (points.length < 3) return points.slice();
-
-    var resolution = 4; // subdivisions per segment
-    var result = [];
-    var n = points.length;
-
-    for (var i = 0; i < n - 1; i++) {
-      var p0 = points[Math.max(0, i - 1)];
-      var p1 = points[i];
-      var p2 = points[i + 1];
-      var p3 = points[Math.min(n - 1, i + 2)];
-
-      for (var t = 0; t < resolution; t++) {
-        var s = t / resolution;
-        var s2 = s * s;
-        var s3 = s2 * s;
-
-        // Standard Catmull-Rom interpolation
-        var x = 0.5 * ((2*p1.x) + (-p0.x + p2.x)*s +
-          (2*p0.x - 5*p1.x + 4*p2.x - p3.x)*s2 +
-          (-p0.x + 3*p1.x - 3*p2.x + p3.x)*s3);
-        var y = 0.5 * ((2*p1.y) + (-p0.y + p2.y)*s +
-          (2*p0.y - 5*p1.y + 4*p2.y - p3.y)*s2 +
-          (-p0.y + 3*p1.y - 3*p2.y + p3.y)*s3);
-
-        result.push({ x: x, y: y });
-      }
-    }
-
-    // Add final endpoint
-    result.push(points[n - 1]);
-    return result;
   },
 
   _computePathLength: function(points) {
