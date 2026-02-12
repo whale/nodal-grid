@@ -26,39 +26,38 @@ Nodal.Nodes = {
     var axisVecY = Math.sin(axisRad);
     var chaosFactor = this.chaos / 100;
 
-    // Find max extent for normalization
-    var maxExtent = 0;
+    // Strategy: low chaos = nodes cluster tightly along the axis LINE through center
+    // (both directions). High chaos = nodes scatter randomly.
+    // Score = closeness to axis line (low rejection) blended with random.
+
+    var maxRejection = 0;
+    var rejections = [];
     for (var i = 0; i < positions.length; i++) {
-      var dx = positions[i].x - cx;
-      var dy = positions[i].y - cy;
-      var ext = Math.sqrt(dx * dx + dy * dy);
-      if (ext > maxExtent) maxExtent = ext;
+      var pos = positions[i];
+      var dx = pos.x - cx;
+      var dy = pos.y - cy;
+      var projection = dx * axisVecX + dy * axisVecY;
+      var rejX = dx - projection * axisVecX;
+      var rejY = dy - projection * axisVecY;
+      var rejection = Math.sqrt(rejX * rejX + rejY * rejY);
+      rejections.push(rejection);
+      if (rejection > maxRejection) maxRejection = rejection;
     }
-    if (maxExtent === 0) maxExtent = 1;
+    if (maxRejection === 0) maxRejection = 1;
 
     // Score each position
     var scored = [];
     for (var i = 0; i < positions.length; i++) {
       var pos = positions[i];
-      var dx = pos.x - cx;
-      var dy = pos.y - cy;
 
-      // Projection onto axis (how far along the axis direction)
-      var projection = dx * axisVecX + dy * axisVecY;
+      // Axis-alignment score: 1 = on the axis, 0 = far from axis
+      var axisScore = 1 - (rejections[i] / maxRejection);
 
-      // Rejection (perpendicular distance from axis line)
-      var rejX = dx - projection * axisVecX;
-      var rejY = dy - projection * axisVecY;
-      var rejection = Math.sqrt(rejX * rejX + rejY * rejY);
+      // Random component (0 to 1)
+      var randScore = Math.random();
 
-      // Directional score: favor positive projection, penalize perpendicular distance
-      var dirScore = projection - rejection * 1.5;
-
-      // Random component
-      var randScore = (Math.random() - 0.5) * 2 * maxExtent;
-
-      // Blend based on chaos
-      var finalScore = dirScore * (1 - chaosFactor) + randScore * chaosFactor;
+      // Blend: at chaos=0, pure axis alignment. At chaos=100, pure random.
+      var finalScore = axisScore * (1 - chaosFactor) + randScore * chaosFactor;
 
       scored.push({
         id: pos.id,
@@ -72,7 +71,7 @@ Nodal.Nodes = {
     scored.sort(function(a, b) { return b.score - a.score; });
 
     // Pick top N with minimum distance filtering
-    var minDist = this.size * 4;
+    var minDist = Math.max(this.size * 3, Math.min(canvasW, canvasH) / (this.count + 4));
     var minDistSq = minDist * minDist;
     this.list = [];
 
