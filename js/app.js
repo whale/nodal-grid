@@ -47,8 +47,10 @@ Nodal._drawScene = function() {
   // Grid
   Nodal.Grid.draw(window);
 
-  // Connections (static paths)
-  Nodal.Connections.draw(window);
+  // Connections (static paths) — hide when line-draw animation replaces them
+  if (Nodal.Animation.mode !== 'linedraw') {
+    Nodal.Connections.draw(window);
+  }
 
   // Animation
   Nodal.Animation.update(deltaTime);

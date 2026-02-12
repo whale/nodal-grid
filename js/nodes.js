@@ -54,7 +54,7 @@ Nodal.Nodes = {
       var axisScore = 1 - (rejections[i] / maxRejection);
 
       // Random component (0 to 1)
-      var randScore = Math.random();
+      var randScore = random();
 
       // Blend: at chaos=0, pure axis alignment. At chaos=100, pure random.
       var finalScore = axisScore * (1 - chaosFactor) + randScore * chaosFactor;
