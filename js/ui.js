@@ -150,6 +150,26 @@ Nodal.UI = {
     this._addSlider('Opacity', 0, 100, Math.round(Nodal.Grid.opacity * 100), 1, function(val) {
       Nodal.Grid.opacity = val / 100;
     });
+
+    this._addSlider('Extent', 10, 100, Nodal.Grid.extent, 5, function(val) {
+      Nodal.Grid.extent = val;
+      self._regenerateAll();
+    });
+
+    this._addSlider('Shape Chaos', 0, 100, Nodal.Grid.shapeChaos, 5, function(val) {
+      Nodal.Grid.shapeChaos = val;
+      self._regenerateAll();
+    });
+
+    this._addSlider('Shape Dir', 0, 360, Nodal.Grid.shapeDirection, 5, function(val) {
+      Nodal.Grid.shapeDirection = val;
+      self._regenerateAll();
+    });
+
+    this._addSlider('Elongation', 0, 100, Nodal.Grid.shapeElongation, 5, function(val) {
+      Nodal.Grid.shapeElongation = val;
+      self._regenerateAll();
+    });
   },
 
   // ==== NODES SECTION ====
