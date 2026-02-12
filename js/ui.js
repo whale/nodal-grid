@@ -258,6 +258,7 @@ Nodal.UI = {
 
     this._addSlider('Chaos', 0, 100, Nodal.Nodes.chaos, 1, function(val) {
       Nodal.Nodes.chaos = val;
+      self._regenerateNodes();
     });
 
     // Regenerate button
@@ -350,6 +351,7 @@ Nodal.UI = {
       Nodal.Nodes.axisAngle = parseInt(slider.value);
       display.textContent = slider.value + '\u00B0';
       drawDial();
+      self._regenerateNodes();
     });
 
     // Dial drag interaction
@@ -369,6 +371,7 @@ Nodal.UI = {
       slider.value = angle;
       display.textContent = angle + '\u00B0';
       drawDial();
+      self._regenerateNodes();
     }
 
     // Initial draw
@@ -427,6 +430,142 @@ Nodal.UI = {
   _buildAnimationSection: function() {
     this._addSection('Animation');
 
+    var self = this;
+
+    // --- PRESETS ---
+    var presets = [
+      {
+        name: 'Circuit',
+        desc: 'Precise grid routing, mirror bounce',
+        apply: function() {
+          Nodal.Animation.mode = 'particle';
+          Nodal.Animation.behavior = 'mirror';
+          Nodal.Animation.speed = 45;
+          Nodal.Animation.streamLength = 0.10;
+          Nodal.Animation.trailLength = 12;
+          Nodal.Animation.nodePulse = true;
+          Nodal.Connections.count = 8;
+          Nodal.Connections.thickness = 2;
+        }
+      },
+      {
+        name: 'Data Flow',
+        desc: 'Fast one-way packets, many streams',
+        apply: function() {
+          Nodal.Animation.mode = 'particle';
+          Nodal.Animation.behavior = 'loop';
+          Nodal.Animation.speed = 70;
+          Nodal.Animation.streamLength = 0.06;
+          Nodal.Animation.trailLength = 8;
+          Nodal.Animation.nodePulse = true;
+          Nodal.Connections.count = 15;
+          Nodal.Connections.thickness = 1;
+        }
+      },
+      {
+        name: 'Pulse',
+        desc: 'Slow breathing glow on all paths',
+        apply: function() {
+          Nodal.Animation.mode = 'glow';
+          Nodal.Animation.speed = 30;
+          Nodal.Animation.glowIntensity = 70;
+          Nodal.Connections.count = 8;
+          Nodal.Connections.thickness = 2;
+        }
+      },
+      {
+        name: 'Synaptic',
+        desc: 'Long slow streams, subtle pulse',
+        apply: function() {
+          Nodal.Animation.mode = 'particle';
+          Nodal.Animation.behavior = 'mirror';
+          Nodal.Animation.speed = 25;
+          Nodal.Animation.streamLength = 0.25;
+          Nodal.Animation.trailLength = 20;
+          Nodal.Animation.nodePulse = true;
+          Nodal.Connections.count = 6;
+          Nodal.Connections.thickness = 2;
+        }
+      },
+      {
+        name: 'Swarm',
+        desc: 'Many fast tiny packets, no pulse',
+        apply: function() {
+          Nodal.Animation.mode = 'particle';
+          Nodal.Animation.behavior = 'loop';
+          Nodal.Animation.speed = 85;
+          Nodal.Animation.streamLength = 0.03;
+          Nodal.Animation.trailLength = 6;
+          Nodal.Animation.nodePulse = false;
+          Nodal.Connections.count = 20;
+          Nodal.Connections.thickness = 1;
+        }
+      },
+      {
+        name: 'Cascade',
+        desc: 'Medium streams, staggered loop',
+        apply: function() {
+          Nodal.Animation.mode = 'particle';
+          Nodal.Animation.behavior = 'loop';
+          Nodal.Animation.speed = 50;
+          Nodal.Animation.streamLength = 0.14;
+          Nodal.Animation.trailLength = 15;
+          Nodal.Animation.nodePulse = true;
+          Nodal.Connections.count = 10;
+          Nodal.Connections.thickness = 2;
+        }
+      },
+      {
+        name: 'Trace',
+        desc: 'Lines draw and redraw themselves',
+        apply: function() {
+          Nodal.Animation.mode = 'linedraw';
+          Nodal.Animation.speed = 40;
+          Nodal.Connections.count = 8;
+          Nodal.Connections.thickness = 2;
+        }
+      },
+      {
+        name: 'Minimal',
+        desc: 'Few slow streams, wide glow',
+        apply: function() {
+          Nodal.Animation.mode = 'particle';
+          Nodal.Animation.behavior = 'mirror';
+          Nodal.Animation.speed = 20;
+          Nodal.Animation.streamLength = 0.18;
+          Nodal.Animation.trailLength = 18;
+          Nodal.Animation.nodePulse = true;
+          Nodal.Connections.count = 3;
+          Nodal.Connections.thickness = 3;
+        }
+      }
+    ];
+
+    var presetRow = document.createElement('div');
+    presetRow.className = 'preset-grid';
+    for (var i = 0; i < presets.length; i++) {
+      (function(preset) {
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-preset';
+        btn.textContent = preset.name;
+        btn.title = preset.desc;
+        btn.addEventListener('click', function() {
+          preset.apply();
+          self._regenerateConnections();
+          // Rebuild UI to reflect new values
+          self.init();
+          // Re-generate everything with new settings
+          Nodal.Grid.generate(width, height, Nodal.Grid.type, Nodal.Grid.cellSize);
+          Nodal.Nodes.generate(width, height);
+          Nodal.Connections.generate();
+          Nodal.Animation.init();
+        });
+        presetRow.appendChild(btn);
+      })(presets[i]);
+    }
+    this._sidebar.appendChild(presetRow);
+
+    // --- MANUAL CONTROLS ---
     this._addSelect('Mode', [
       { value: 'particle', label: 'Stream' },
       { value: 'linedraw', label: 'Line Draw' },
