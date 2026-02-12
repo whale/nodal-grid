@@ -1,0 +1,342 @@
+/* === Reset & Layout === */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  background: #1a1a1a;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 13px;
+  color: #e0e0e0;
+}
+
+/* === Canvas === */
+#canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#canvas-container canvas {
+  display: block;
+}
+
+/* === Sidebar === */
+#sidebar {
+  width: 320px;
+  min-width: 320px;
+  height: 100vh;
+  overflow-y: auto;
+  background: #252525;
+  border-left: 1px solid #3a3a3a;
+  padding: 16px;
+}
+
+#sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+#sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+#sidebar::-webkit-scrollbar-thumb {
+  background: #555;
+  border-radius: 3px;
+}
+
+/* === Section Headers === */
+.section-header {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #888;
+  padding: 12px 0 8px;
+  border-bottom: 1px solid #3a3a3a;
+  margin-bottom: 12px;
+  margin-top: 8px;
+}
+
+.section-header:first-child {
+  margin-top: 0;
+}
+
+/* === Control Rows === */
+.control-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  min-height: 32px;
+}
+
+.control-row label {
+  font-size: 12px;
+  color: #bbb;
+  white-space: nowrap;
+  margin-right: 12px;
+}
+
+.control-row .value-display {
+  font-size: 11px;
+  color: #888;
+  min-width: 28px;
+  text-align: right;
+  margin-left: 6px;
+}
+
+/* === Inputs === */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  background: #444;
+  border-radius: 2px;
+  outline: none;
+  max-width: 140px;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #c8ff00;
+  cursor: pointer;
+  border: none;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #c8ff00;
+  cursor: pointer;
+  border: none;
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #555;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+input[type="number"] {
+  width: 70px;
+  height: 28px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 12px;
+  padding: 0 6px;
+  text-align: center;
+  outline: none;
+}
+
+input[type="number"]:focus {
+  border-color: #c8ff00;
+}
+
+select {
+  height: 28px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #e0e0e0;
+  font-size: 12px;
+  padding: 0 6px;
+  outline: none;
+  cursor: pointer;
+}
+
+select:focus {
+  border-color: #c8ff00;
+}
+
+/* === Buttons === */
+.btn {
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid #555;
+  border-radius: 4px;
+  background: #333;
+  color: #e0e0e0;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.btn:hover {
+  background: #444;
+  border-color: #777;
+}
+
+.btn-primary {
+  border-color: #c8ff00;
+  color: #c8ff00;
+}
+
+.btn-primary:hover {
+  background: rgba(200, 255, 0, 0.1);
+}
+
+.btn-small {
+  height: 26px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+/* === Toggle Button Group === */
+.toggle-group {
+  display: flex;
+  gap: 0;
+}
+
+.toggle-group .btn {
+  border-radius: 0;
+  border-right-width: 0;
+}
+
+.toggle-group .btn:first-child {
+  border-radius: 4px 0 0 4px;
+}
+
+.toggle-group .btn:last-child {
+  border-radius: 0 4px 4px 0;
+  border-right-width: 1px;
+}
+
+.toggle-group .btn.active {
+  background: rgba(200, 255, 0, 0.15);
+  border-color: #c8ff00;
+  color: #c8ff00;
+}
+
+/* === Advanced Drawer === */
+details.advanced-drawer {
+  margin-top: 16px;
+  border-top: 1px solid #3a3a3a;
+}
+
+details.advanced-drawer summary {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #666;
+  padding: 12px 0 8px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+}
+
+details.advanced-drawer summary::-webkit-details-marker {
+  display: none;
+}
+
+details.advanced-drawer summary::before {
+  content: '\25B6';
+  display: inline-block;
+  margin-right: 8px;
+  font-size: 8px;
+  transition: transform 0.2s;
+}
+
+details.advanced-drawer[open] summary::before {
+  transform: rotate(90deg);
+}
+
+/* === Export Buttons === */
+.export-row {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+/* === Axis Dial === */
+.axis-dial-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.axis-dial {
+  width: 60px;
+  height: 60px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* === Progress Overlay === */
+.export-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.export-progress-inner {
+  background: #2a2a2a;
+  border: 1px solid #555;
+  border-radius: 8px;
+  padding: 24px 32px;
+  text-align: center;
+}
+
+.export-progress-bar {
+  width: 200px;
+  height: 4px;
+  background: #444;
+  border-radius: 2px;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.export-progress-fill {
+  height: 100%;
+  background: #c8ff00;
+  border-radius: 2px;
+  transition: width 0.1s;
+}
+
+/* === Play/Pause Button === */
+.btn-play {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
