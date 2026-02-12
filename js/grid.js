@@ -229,12 +229,14 @@ Nodal.Grid = {
       // Perlin noise (0-1 range)
       var n = noise(cell.cx * noiseScale + 100, cell.cy * noiseScale + 100);
 
-      // Score: center-bias + noise. Higher = more likely visible.
-      // At low chaos, center bias dominates (keeps most cells).
-      // At high chaos, noise dominates (creates holes everywhere).
+      // Score: strong center-bias + noise. Grid stays centered,
+      // holes appear more toward edges. Center cells are always kept.
       var centerBias = 1 - normDist;
-      var noiseMix = chaos; // 0-1: how much noise matters vs center bias
-      var score = centerBias * (1 - noiseMix * 0.7) + n * (0.3 + noiseMix * 0.7);
+      // Center guarantee: cells very close to center always score high
+      var centerBoost = Math.max(0, 1 - normDist * 2.5);
+      centerBoost = centerBoost * centerBoost; // quadratic falloff
+      var noiseMix = chaos;
+      var score = centerBias * (1 - noiseMix * 0.5) + n * (0.2 + noiseMix * 0.5) + centerBoost * 0.3;
 
       cell.visible = score > threshold;
     }
