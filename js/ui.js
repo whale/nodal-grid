@@ -639,6 +639,44 @@ Nodal.UI = {
     }, row);
 
     this._sidebar.appendChild(row);
+
+    // Config save/load
+    var configRow = document.createElement('div');
+    configRow.className = 'export-row';
+    configRow.style.marginTop = '4px';
+
+    this._addButton('Copy Settings', 'btn-small', function() {
+      var json = JSON.stringify(Nodal.getConfig());
+      navigator.clipboard.writeText(json).then(function() {
+        // Brief visual feedback
+        var btns = configRow.querySelectorAll('button');
+        btns[0].textContent = 'Copied!';
+        setTimeout(function() { btns[0].textContent = 'Copy Settings'; }, 1500);
+      });
+    }, configRow);
+
+    this._addButton('Copy Link', 'btn-small', function() {
+      var json = JSON.stringify(Nodal.getConfig());
+      var url = window.location.origin + window.location.pathname + '#' + encodeURIComponent(json);
+      navigator.clipboard.writeText(url).then(function() {
+        var btns = configRow.querySelectorAll('button');
+        btns[1].textContent = 'Copied!';
+        setTimeout(function() { btns[1].textContent = 'Copy Link'; }, 1500);
+      });
+    }, configRow);
+
+    this._addButton('Load Settings', 'btn-small', function() {
+      var json = prompt('Paste settings JSON:');
+      if (!json) return;
+      try {
+        var cfg = JSON.parse(json);
+        Nodal.loadConfig(cfg);
+      } catch (e) {
+        alert('Invalid settings JSON');
+      }
+    }, configRow);
+
+    this._sidebar.appendChild(configRow);
   },
 
   // ==== ADVANCED DRAWER ====
